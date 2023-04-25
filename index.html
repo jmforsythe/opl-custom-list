@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Opl custom list</title>
+    <link type="text/css" rel="stylesheet" href="stylesheet.css" />
+  </head>
+  <body>
+    <div class="list_container">
+      Usernames
+      <input type="text" name="username" class="text_entry" />
+      <input
+        type="button"
+        value="Add username"
+        class="text_submit"
+        onclick="add_username()"
+      />
+      <div class="item_list"></div>
+    </div>
+    <input type="button" value="Show results" onclick="show_results()"/>
+    <div class="list_container" id="results">
+    </div>
+    <script src="javascript.js"></script>
+  </body>
+</html>
