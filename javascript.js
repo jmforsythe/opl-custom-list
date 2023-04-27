@@ -50,16 +50,98 @@ function show_results() {
   const old_list = container.querySelector(".item_list");
   if (old_list) old_list.remove();
   const new_list = document.createElement("div");
-  new_list.classList.add("item_list");
 
   const usernames = get_usernames();
   usernames.forEach((u) => {
     const csv = get_lifter_csv_from_openpl(u);
+    const rows = csv.split("\n");
     if (csv == null) return;
-    const el = document.createElement("div");
-    el.classList.add("list_item");
-    new_list.appendChild(el);
-    el.innerText = csv;
+    const results = rows.slice(1, -1).map((row) => parse_result(rows[0], row));
+    console.log(results)
+    const thead = header_text_to_thead(rows[0]);
+    console.log(thead)
+    const trs = results.map((result) => result_to_table_row(thead, result));
+    const table = document.createElement("table");
+    table.appendChild(thead);
+    trs.forEach((tr) => { table.appendChild(tr) });
+    new_list.appendChild(table);
   });
   container.appendChild(new_list);
 }
+
+function get_usernames_from_url() {
+  const url_params = window.location.search.substring(1);
+  return url_params ? url_params.split("&") : [];
+}
+
+function parse_result(header_text, result_text) {
+  const keys = header_text.split(",");
+  const vals = result_text.split(",");
+  let out = {};
+  keys.forEach((key, index) => {
+    out[key] = vals[index];
+  });
+  return out;
+}
+
+function header_text_to_thead(header_text) {
+  const thead = document.createElement("thead");
+  header_text.split(",").forEach((val) => {
+    if (keep_header(val)) {
+      const th = document.createElement("th");
+      th.innerText = val;
+      thead.appendChild(th);
+    }
+  })
+  return thead;
+}
+
+function result_to_table_row(thead, result) {
+  const table_row = document.createElement("tr");
+  for (const column of thead.children) {
+    const th = document.createElement("th");
+    const key = column.innerText;
+    if (key in result) {
+      th.innerText = result[key];
+    }
+    table_row.appendChild(th);
+  }
+  return table_row;
+}
+
+function get_best(results, key) {
+  return results.reduce((max, result) =>
+    result[key] > max ? result[key] : max
+  );
+}
+
+function keep_header(header) {
+  console.log(header)
+  return [
+    "Name",
+    "Sex",
+    "Equipment",
+    "Age",
+    "Division",
+    "BodyweightKg",
+    "WeightClassKg",
+    "Best3SquatKg",
+    "Best3BenchKg",
+    "Best3DeadliftKg",
+    "TotalKg",
+    "Dots",
+    "Federation",
+    "ParentFederation",
+    "Date",
+  ].includes(header);
+}
+
+function main() {
+  const URL_USERS = get_usernames_from_url();
+  const USERNAME_LIST = document.querySelector(".item_list");
+  URL_USERS.forEach((username) =>
+    USERNAME_LIST.appendChild(make_list_item(username))
+  );
+}
+
+main();
