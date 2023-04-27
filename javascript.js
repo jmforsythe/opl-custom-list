@@ -47,9 +47,11 @@ function get_lifter_csv_from_openpl(lifter_name) {
 
 function show_results() {
   const container = document.getElementById("results");
-  const old_list = container.querySelector(".item_list");
+  const old_list = container.querySelector("table");
   if (old_list) old_list.remove();
-  const new_list = document.createElement("div");
+  let header_text = undefined;
+  const table = document.createElement("table");
+  let thead = undefined;
 
   const usernames = get_usernames();
   usernames.forEach((u) => {
@@ -57,16 +59,15 @@ function show_results() {
     const rows = csv.split("\n");
     if (csv == null) return;
     const results = rows.slice(1, -1).map((row) => parse_result(rows[0], row));
-    console.log(results)
-    const thead = header_text_to_thead(rows[0]);
-    console.log(thead)
+    if (header_text === undefined) {
+      header_text = rows[0];
+      thead = header_text_to_thead(header_text);
+      table.appendChild(thead);
+    }
     const trs = results.map((result) => result_to_table_row(thead, result));
-    const table = document.createElement("table");
-    table.appendChild(thead);
     trs.forEach((tr) => { table.appendChild(tr) });
-    new_list.appendChild(table);
   });
-  container.appendChild(new_list);
+  container.appendChild(table);
 }
 
 function get_usernames_from_url() {
@@ -116,7 +117,6 @@ function get_best(results, key) {
 }
 
 function keep_header(header) {
-  console.log(header)
   return [
     "Name",
     "Sex",

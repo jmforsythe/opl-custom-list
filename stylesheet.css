@@ -2,9 +2,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 10%;
-  padding-bottom: 5%;
   width: 100%;
+  max-width: 500px;
   border: 2px solid black;
   box-sizing: border-box;
 }
@@ -31,4 +30,13 @@
 .list_item .close_button {
   margin-left: auto;
   flex-basis: 10%;
+}
+
+table {
+    width: 100%;
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-bottom: 12px;
+    border-spacing: 0px;
+    border: none;
 }
