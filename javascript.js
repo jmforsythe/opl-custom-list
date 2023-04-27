@@ -52,6 +52,7 @@ function show_results() {
   let header_text = undefined;
   const table = document.createElement("table");
   let thead = undefined;
+  const tbody = document.createElement("tbody");
 
   const usernames = get_usernames();
   set_url_params(usernames);
@@ -64,9 +65,16 @@ function show_results() {
       header_text = rows[0];
       thead = header_text_to_thead(header_text);
       table.appendChild(thead);
+      table.appendChild(tbody);
     }
     const trs = results.map((result) => result_to_table_row(thead, result));
-    trs.forEach((tr) => { table.appendChild(tr) });
+    const blank_row = document.createElement("tr");
+    blank_row.appendChild(document.createElement("td"));
+    blank_row.classList.add("blank_row");
+    trs.push(blank_row);
+    trs.forEach((tr) => {
+      tbody.appendChild(tr);
+    });
   });
   container.appendChild(table);
 }
@@ -88,19 +96,21 @@ function parse_result(header_text, result_text) {
 
 function header_text_to_thead(header_text) {
   const thead = document.createElement("thead");
+  const tr = document.createElement("tr");
   header_text.split(",").forEach((val) => {
     if (keep_header(val)) {
       const th = document.createElement("th");
       th.innerText = val;
-      thead.appendChild(th);
+      tr.appendChild(th);
     }
-  })
+  });
+  thead.appendChild(tr);
   return thead;
 }
 
 function result_to_table_row(thead, result) {
   const table_row = document.createElement("tr");
-  for (const column of thead.children) {
+  for (const column of thead.querySelector("tr").children) {
     const th = document.createElement("th");
     const key = column.innerText;
     if (key in result) {
@@ -138,7 +148,7 @@ function keep_header(header) {
 }
 
 function set_url_params(usernames) {
-  window.history.replaceState(null, null, `?${usernames.join("&")}`)
+  window.history.replaceState(null, null, `?${usernames.join("&")}`);
 }
 
 function main() {

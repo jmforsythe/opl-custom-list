@@ -5,20 +5,21 @@
     <link type="text/css" rel="stylesheet" href="stylesheet.css" />
   </head>
   <body>
-    <div class="list_container">
-      Usernames
-      <input type="text" name="username" class="text_entry" />
-      <input
-        type="button"
-        value="Add username"
-        class="text_submit"
-        onclick="add_username()"
-      />
-      <div class="item_list"></div>
+    <div class="center_container">
+      <div class="list_container">
+        Usernames
+        <input type="text" name="username" class="text_entry" />
+        <input
+          type="button"
+          value="Add username"
+          class="text_submit"
+          onclick="add_username()"
+        />
+        <div class="item_list"></div>
+      </div>
     </div>
-    <input type="button" value="Show results" onclick="show_results()"/>
-    <div id="results">
-    </div>
+    <input type="button" value="Show results" onclick="show_results()" />
+    <div id="results"></div>
     <script src="javascript.js"></script>
   </body>
 </html>
