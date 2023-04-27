@@ -54,6 +54,7 @@ function show_results() {
   let thead = undefined;
 
   const usernames = get_usernames();
+  set_url_params(usernames);
   usernames.forEach((u) => {
     const csv = get_lifter_csv_from_openpl(u);
     const rows = csv.split("\n");
@@ -134,6 +135,10 @@ function keep_header(header) {
     "ParentFederation",
     "Date",
   ].includes(header);
+}
+
+function set_url_params(usernames) {
+  window.history.replaceState(null, null, `?${usernames.join("&")}`)
 }
 
 function main() {
