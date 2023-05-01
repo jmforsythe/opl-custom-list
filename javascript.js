@@ -73,23 +73,55 @@ function show_results() {
   table.appendChild(thead);
   table.appendChild(tbody);
 
+  const filter_field = "Dots";
+  const only_best = true;
+
   const usernames = get_usernames();
   set_url_params(usernames);
   usernames.forEach((u) => {
     const csv = get_lifter_csv_from_openpl(u);
     if (csv == null) return;
     const rows = csv.split("\n");
-    const results = rows.slice(1, -1).map((row) => parse_result(rows[0], row));
+    let results = rows.slice(1, -1).map((row) => parse_result(rows[0], row));
+    if (only_best)
+      results = [
+        results.reduce((max, result) =>
+          max[filter_field] > result[filter_field] ? max : result
+        ),
+      ];
     const trs = results.map((result) => result_to_table_row(result));
     const blank_row = document.createElement("tr");
-    blank_row.appendChild(document.createElement("td"));
     blank_row.classList.add("blank_row");
+    const blank_row_el = document.createElement("td");
+    blank_row_el.setAttribute("colspan", FIELDS.length);
+    blank_row.appendChild(blank_row_el);
     trs.push(blank_row);
     trs.forEach((tr) => {
       tbody.appendChild(tr);
     });
   });
   tbody.removeChild(tbody.lastChild);
+
+  const do_sort = true;
+  const sort_field = filter_field;
+
+  if (do_sort) {
+    const blanks = tbody.querySelectorAll(".blank_row");
+    const column_number = FIELDS.indexOf(sort_field);
+    let rows = Array.from(tbody.querySelectorAll("tr:not(.blank_row)"));
+    rows.forEach((row) => console.log(row.outerHTML));
+    rows.sort((r1, r2) => {
+      const v1 = r1.children[column_number].textContent;
+      const v2 = r2.children[column_number].textContent;
+      return v1 < v2 ? 1 : v1 > v2 ? -1 : 0;
+    });
+    rows.forEach((row) => console.log(row.outerHTML));
+    rows.forEach((r, i) => {
+      tbody.appendChild(r);
+      if (i < blanks.length) tbody.appendChild(blanks[i]);
+    });
+  }
+
   container.appendChild(table);
 }
 
@@ -116,7 +148,7 @@ function map_field(field) {
     Best3BenchKg: "Bench",
     Best3DeadliftKg: "Deadlift",
     TotalKg: "Total",
-    ParentFederation: ""
+    ParentFederation: "",
   };
   if (field in m) return m[field];
   return field;
@@ -139,11 +171,11 @@ function fields_to_thead(fields) {
 function result_to_table_row(result) {
   const table_row = document.createElement("tr");
   for (const field of FIELDS) {
-    const th = document.createElement("th");
+    const td = document.createElement("td");
     if (field in result) {
-      th.innerText = result[field];
+      td.innerText = result[field];
     }
-    table_row.appendChild(th);
+    table_row.appendChild(td);
   }
   return table_row;
 }

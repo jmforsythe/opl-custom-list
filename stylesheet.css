@@ -65,4 +65,15 @@ thead {
 
 .blank_row {
   height: 10px;
+  background-color: black;
+}
+
+td {
+  border: 0px;
+  padding-right: 0px;
+  padding-left: 5px;
+}
+
+th {
+  text-align: left;
 }
