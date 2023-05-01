@@ -16,12 +16,14 @@ FIELDS = [
   "Date",
 ];
 
-RESULTS_CACHE = { };
+RESULTS_CACHE = {};
 
 function add_username() {
   const username_list = document.querySelector(".item_list");
   const username_entry = document.querySelector(".text_entry");
+  if (username_entry.value === "") return;
   username_list.appendChild(make_list_item(username_entry.value));
+  show_results();
 }
 
 function make_list_item(text) {
@@ -38,6 +40,7 @@ function make_list_item(text) {
   close_button.classList.add("close_button");
   close_button.onclick = () => {
     el.parentElement.removeChild(el);
+    show_results();
   };
   return el;
 }
@@ -210,6 +213,7 @@ function main() {
   URL_USERS.forEach((username) =>
     USERNAME_LIST.appendChild(make_list_item(username))
   );
+  show_results();
 }
 
 main();
