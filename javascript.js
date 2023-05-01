@@ -1,3 +1,21 @@
+FIELDS = [
+  "Name",
+  "Sex",
+  "Equipment",
+  "Age",
+  "Division",
+  "BodyweightKg",
+  "WeightClassKg",
+  "Best3SquatKg",
+  "Best3BenchKg",
+  "Best3DeadliftKg",
+  "TotalKg",
+  "Dots",
+  "Federation",
+  "ParentFederation",
+  "Date",
+];
+
 function add_username() {
   const username_list = document.querySelector(".item_list");
   const username_entry = document.querySelector(".text_entry");
@@ -49,25 +67,20 @@ function show_results() {
   const container = document.getElementById("results");
   const old_list = container.querySelector("table");
   if (old_list) old_list.remove();
-  let header_text = undefined;
   const table = document.createElement("table");
-  let thead = undefined;
+  const thead = fields_to_thead(FIELDS);
   const tbody = document.createElement("tbody");
+  table.appendChild(thead);
+  table.appendChild(tbody);
 
   const usernames = get_usernames();
   set_url_params(usernames);
   usernames.forEach((u) => {
     const csv = get_lifter_csv_from_openpl(u);
-    const rows = csv.split("\n");
     if (csv == null) return;
+    const rows = csv.split("\n");
     const results = rows.slice(1, -1).map((row) => parse_result(rows[0], row));
-    if (header_text === undefined) {
-      header_text = rows[0];
-      thead = header_text_to_thead(header_text);
-      table.appendChild(thead);
-      table.appendChild(tbody);
-    }
-    const trs = results.map((result) => result_to_table_row(thead, result));
+    const trs = results.map((result) => result_to_table_row(result));
     const blank_row = document.createElement("tr");
     blank_row.appendChild(document.createElement("td"));
     blank_row.classList.add("blank_row");
@@ -76,6 +89,7 @@ function show_results() {
       tbody.appendChild(tr);
     });
   });
+  tbody.removeChild(tbody.lastChild);
   container.appendChild(table);
 }
 
@@ -94,10 +108,10 @@ function parse_result(header_text, result_text) {
   return out;
 }
 
-function header_text_to_thead(header_text) {
+function fields_to_thead(fields) {
   const thead = document.createElement("thead");
   const tr = document.createElement("tr");
-  header_text.split(",").forEach((val) => {
+  fields.forEach((val) => {
     if (keep_header(val)) {
       const th = document.createElement("th");
       th.innerText = val;
@@ -108,13 +122,12 @@ function header_text_to_thead(header_text) {
   return thead;
 }
 
-function result_to_table_row(thead, result) {
+function result_to_table_row(result) {
   const table_row = document.createElement("tr");
-  for (const column of thead.querySelector("tr").children) {
+  for (const field of FIELDS) {
     const th = document.createElement("th");
-    const key = column.innerText;
-    if (key in result) {
-      th.innerText = result[key];
+    if (field in result) {
+      th.innerText = result[field];
     }
     table_row.appendChild(th);
   }
@@ -128,23 +141,7 @@ function get_best(results, key) {
 }
 
 function keep_header(header) {
-  return [
-    "Name",
-    "Sex",
-    "Equipment",
-    "Age",
-    "Division",
-    "BodyweightKg",
-    "WeightClassKg",
-    "Best3SquatKg",
-    "Best3BenchKg",
-    "Best3DeadliftKg",
-    "TotalKg",
-    "Dots",
-    "Federation",
-    "ParentFederation",
-    "Date",
-  ].includes(header);
+  return FIELDS.includes(header);
 }
 
 function set_url_params(usernames) {
