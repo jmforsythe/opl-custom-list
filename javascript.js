@@ -16,6 +16,16 @@ FIELDS = [
   "Date",
 ];
 
+SORTABLE = [
+  "Best3SquatKg",
+  "Best3BenchKg",
+  "Best3DeadliftKg",
+  "TotalKg",
+  "Dots",
+];
+
+DEFAULT_SORT = "Dots";
+
 RESULTS_CACHE = {};
 
 function add_username() {
@@ -74,10 +84,10 @@ function get_results(username) {
     if (csv === null) {
       RESULTS_CACHE[username] = null;
     } else {
-    const rows = csv.split("\n");
-    RESULTS_CACHE[username] = rows
-      .slice(1, -1)
-      .map((row) => parse_result(rows[0], row));
+      const rows = csv.split("\n");
+      RESULTS_CACHE[username] = rows
+        .slice(1, -1)
+        .map((row) => parse_result(rows[0], row));
     }
   }
   return RESULTS_CACHE[username];
@@ -93,7 +103,7 @@ function show_results() {
   table.appendChild(thead);
   table.appendChild(tbody);
 
-  const filter_field = "Dots";
+  const filter_field = get_select_val();
   const only_best = true;
 
   const usernames = get_usernames();
@@ -210,12 +220,31 @@ function set_url_params(usernames) {
   window.history.replaceState(null, null, `?${usernames.join("&")}`);
 }
 
+function populate_select() {
+  const select_el = document.getElementById("filter_sort_select");
+  SORTABLE.forEach((field) => {
+    if (!FIELDS.includes(field)) return;
+    const option = document.createElement("option");
+    option.setAttribute("value", field);
+    option.innerText = map_field(field);
+    select_el.appendChild(option);
+  });
+  select_el.value = DEFAULT_SORT;
+  select_el.addEventListener("change", (event) => show_results());
+}
+
+function get_select_val() {
+  const select_el = document.getElementById("filter_sort_select");
+  return select_el.value;
+}
+
 function main() {
   const URL_USERS = get_usernames_from_url();
   const USERNAME_LIST = document.querySelector(".item_list");
   URL_USERS.forEach((username) =>
     USERNAME_LIST.appendChild(make_list_item(username))
   );
+  populate_select();
   show_results();
 }
 
