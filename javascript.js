@@ -16,6 +16,16 @@ FIELDS = [
   "Date",
 ];
 
+FIELD_MAPPING = {
+  BodyweightKg: "Bodyweight",
+  WeightClassKg: "Weight Class",
+  Best3SquatKg: "Squat",
+  Best3BenchKg: "Bench",
+  Best3DeadliftKg: "Deadlift",
+  TotalKg: "Total",
+  ParentFederation: "Parent",
+};
+
 SORTABLE = [
   "Best3SquatKg",
   "Best3BenchKg",
@@ -108,8 +118,8 @@ function show_results() {
 
   const usernames = get_usernames();
   set_url_params(usernames);
-  usernames.forEach((u) => {
-    let results = get_results(u);
+  usernames.forEach((username) => {
+    let results = get_results(username);
     if (results === null) return;
     if (only_best)
       results = [
@@ -117,18 +127,17 @@ function show_results() {
           max[filter_field] > result[filter_field] ? max : result
         ),
       ];
-    const trs = results.map((result) => result_to_table_row(result));
+    const trs = results.map((result) => result_to_table_row(result, username));
     const blank_row = document.createElement("tr");
     blank_row.classList.add("blank_row");
     const blank_row_el = document.createElement("td");
     blank_row_el.setAttribute("colspan", FIELDS.length);
     blank_row.appendChild(blank_row_el);
-    trs.push(blank_row);
+    // trs.push(blank_row);
     trs.forEach((tr) => {
       tbody.appendChild(tr);
     });
   });
-  tbody.removeChild(tbody.lastChild);
 
   const do_sort = true;
   const sort_field = filter_field;
@@ -167,16 +176,7 @@ function parse_result(header_text, result_text) {
 }
 
 function map_field(field) {
-  const m = {
-    BodyweightKg: "Bodyweight",
-    WeightClassKg: "Weight Class",
-    Best3SquatKg: "Squat",
-    Best3BenchKg: "Bench",
-    Best3DeadliftKg: "Deadlift",
-    TotalKg: "Total",
-    ParentFederation: "",
-  };
-  if (field in m) return m[field];
+  if (field in FIELD_MAPPING) return FIELD_MAPPING[field];
   return field;
 }
 
@@ -194,12 +194,20 @@ function fields_to_thead(fields) {
   return thead;
 }
 
-function result_to_table_row(result) {
+function result_to_table_row(result, username) {
   const table_row = document.createElement("tr");
   for (const field of FIELDS) {
     const td = document.createElement("td");
     if (field in result) {
-      td.innerText = result[field];
+      if (field == "Name" && username !== undefined) {
+        td.innerHTML = `<a href=https://www.openpowerlifting.org/u/${username}/>${result[field]}</a>`;
+        td.classList.add("name");
+      } else {
+        td.innerText = result[field];
+      }
+      if (field == "Best3SquatKg") td.classList.add("squat");
+      if (field == "Best3BenchKg") td.classList.add("bench");
+      if (field == "Best3DeadliftKg") td.classList.add("deadlift");
     }
     table_row.appendChild(td);
   }
@@ -239,12 +247,12 @@ function get_select_val() {
 }
 
 function main() {
+  populate_select();
   const URL_USERS = get_usernames_from_url();
   const USERNAME_LIST = document.querySelector(".item_list");
   URL_USERS.forEach((username) =>
     USERNAME_LIST.appendChild(make_list_item(username))
   );
-  populate_select();
   show_results();
 }
 
