@@ -108,13 +108,27 @@ function parse_result(header_text, result_text) {
   return out;
 }
 
+function map_field(field) {
+  const m = {
+    BodyweightKg: "Bodyweight",
+    WeightClassKg: "Weight Class",
+    Best3SquatKg: "Squat",
+    Best3BenchKg: "Bench",
+    Best3DeadliftKg: "Deadlift",
+    TotalKg: "Total",
+    ParentFederation: ""
+  };
+  if (field in m) return m[field];
+  return field;
+}
+
 function fields_to_thead(fields) {
   const thead = document.createElement("thead");
   const tr = document.createElement("tr");
   fields.forEach((val) => {
     if (keep_header(val)) {
       const th = document.createElement("th");
-      th.innerText = val;
+      th.innerText = map_field(val);
       tr.appendChild(th);
     }
   });
