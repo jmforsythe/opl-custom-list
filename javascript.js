@@ -16,6 +16,8 @@ FIELDS = [
   "Date",
 ];
 
+RESULTS_CACHE = { };
+
 function add_username() {
   const username_list = document.querySelector(".item_list");
   const username_entry = document.querySelector(".text_entry");
@@ -63,6 +65,18 @@ function get_lifter_csv_from_openpl(lifter_name) {
   return result;
 }
 
+function get_results(username) {
+  if (!(username in RESULTS_CACHE)) {
+    const csv = get_lifter_csv_from_openpl(username);
+    if (csv == null) return null;
+    const rows = csv.split("\n");
+    RESULTS_CACHE[username] = rows
+      .slice(1, -1)
+      .map((row) => parse_result(rows[0], row));
+  }
+  return RESULTS_CACHE[username];
+}
+
 function show_results() {
   const container = document.getElementById("results");
   const old_list = container.querySelector("table");
@@ -79,10 +93,8 @@ function show_results() {
   const usernames = get_usernames();
   set_url_params(usernames);
   usernames.forEach((u) => {
-    const csv = get_lifter_csv_from_openpl(u);
-    if (csv == null) return;
-    const rows = csv.split("\n");
-    let results = rows.slice(1, -1).map((row) => parse_result(rows[0], row));
+    let results = get_results(u);
+    if (results === null) return;
     if (only_best)
       results = [
         results.reduce((max, result) =>
@@ -109,13 +121,11 @@ function show_results() {
     const blanks = tbody.querySelectorAll(".blank_row");
     const column_number = FIELDS.indexOf(sort_field);
     let rows = Array.from(tbody.querySelectorAll("tr:not(.blank_row)"));
-    rows.forEach((row) => console.log(row.outerHTML));
     rows.sort((r1, r2) => {
       const v1 = r1.children[column_number].textContent;
       const v2 = r2.children[column_number].textContent;
       return v1 < v2 ? 1 : v1 > v2 ? -1 : 0;
     });
-    rows.forEach((row) => console.log(row.outerHTML));
     rows.forEach((r, i) => {
       tbody.appendChild(r);
       if (i < blanks.length) tbody.appendChild(blanks[i]);
