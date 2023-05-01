@@ -225,7 +225,11 @@ function keep_header(header) {
 }
 
 function set_url_params(usernames) {
-  window.history.replaceState(null, null, `?${usernames.join("&")}`);
+  window.history.replaceState(
+    null,
+    null,
+    usernames.length ? `?${usernames.join("&")}` : window.location.pathname
+  );
 }
 
 function populate_select() {
