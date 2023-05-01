@@ -71,11 +71,14 @@ function get_lifter_csv_from_openpl(lifter_name) {
 function get_results(username) {
   if (!(username in RESULTS_CACHE)) {
     const csv = get_lifter_csv_from_openpl(username);
-    if (csv == null) return null;
+    if (csv === null) {
+      RESULTS_CACHE[username] = null;
+    } else {
     const rows = csv.split("\n");
     RESULTS_CACHE[username] = rows
       .slice(1, -1)
       .map((row) => parse_result(rows[0], row));
+    }
   }
   return RESULTS_CACHE[username];
 }
