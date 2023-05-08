@@ -124,7 +124,9 @@ async function show_results() {
       if (only_best)
         results = [
           results.reduce((max, result) =>
-            max[filter_field] > result[filter_field] ? max : result
+            Number(max[filter_field]) > Number(result[filter_field])
+              ? max
+              : result
           ),
         ];
       const trs = results.map((result) =>
@@ -148,8 +150,8 @@ async function show_results() {
   const column_number = FIELDS.indexOf(sort_field);
   let rows = Array.from(tbody.querySelectorAll("tr:not(.blank_row)"));
   rows.sort((r1, r2) => {
-    const v1 = r1.children[column_number].textContent;
-    const v2 = r2.children[column_number].textContent;
+    const v1 = Number(r1.children[column_number].textContent);
+    const v2 = Number(r2.children[column_number].textContent);
     return v1 < v2 ? 1 : v1 > v2 ? -1 : 0;
   });
   rows.forEach((r, i) => {
