@@ -78,7 +78,7 @@ function get_usernames() {
 async function get_lifter_csv_from_openpl(lifter_name) {
   const url = `https://www.openpowerlifting.org/api/liftercsv/${lifter_name}/`;
   const cors_proxy_url = `https://corsproxy.io/?${url}`;
-  const response = await fetch(cors_proxy_url)
+  const response = await fetch(cors_proxy_url);
   if (!response.ok) {
     console.log(`Invalid lifter name "${lifter_name}"`);
     return null;
@@ -117,46 +117,45 @@ async function show_results() {
   const usernames = get_usernames();
   set_url_params(usernames);
 
-  await Promise.all(usernames.map((username) => get_results(username)));
+  await Promise.all(
+    usernames.map(async (username) => {
+      let results = await get_results(username);
+      if (results === null) return;
+      if (only_best)
+        results = [
+          results.reduce((max, result) =>
+            max[filter_field] > result[filter_field] ? max : result
+          ),
+        ];
+      const trs = results.map((result) =>
+        result_to_table_row(result, username)
+      );
+      const blank_row = document.createElement("tr");
+      blank_row.classList.add("blank_row");
+      const blank_row_el = document.createElement("td");
+      blank_row_el.setAttribute("colspan", FIELDS.length);
+      blank_row.appendChild(blank_row_el);
+      // trs.push(blank_row);
+      trs.forEach((tr) => {
+        tbody.appendChild(tr);
+      });
+    })
+  );
 
-  usernames.forEach(async (username) => {
-    let results = await get_results(username);
-    if (results === null) return;
-    if (only_best)
-      results = [
-        results.reduce((max, result) =>
-          max[filter_field] > result[filter_field] ? max : result
-        ),
-      ];
-    const trs = results.map((result) => result_to_table_row(result, username));
-    const blank_row = document.createElement("tr");
-    blank_row.classList.add("blank_row");
-    const blank_row_el = document.createElement("td");
-    blank_row_el.setAttribute("colspan", FIELDS.length);
-    blank_row.appendChild(blank_row_el);
-    // trs.push(blank_row);
-    trs.forEach((tr) => {
-      tbody.appendChild(tr);
-    });
-  });
-
-  const do_sort = true;
   const sort_field = filter_field;
 
-  if (do_sort) {
-    const blanks = tbody.querySelectorAll(".blank_row");
-    const column_number = FIELDS.indexOf(sort_field);
-    let rows = Array.from(tbody.querySelectorAll("tr:not(.blank_row)"));
-    rows.sort((r1, r2) => {
-      const v1 = r1.children[column_number].textContent;
-      const v2 = r2.children[column_number].textContent;
-      return v1 < v2 ? 1 : v1 > v2 ? -1 : 0;
-    });
-    rows.forEach((r, i) => {
-      tbody.appendChild(r);
-      if (i < blanks.length) tbody.appendChild(blanks[i]);
-    });
-  }
+  const blanks = tbody.querySelectorAll(".blank_row");
+  const column_number = FIELDS.indexOf(sort_field);
+  let rows = Array.from(tbody.querySelectorAll("tr:not(.blank_row)"));
+  rows.sort((r1, r2) => {
+    const v1 = r1.children[column_number].textContent;
+    const v2 = r2.children[column_number].textContent;
+    return v1 < v2 ? 1 : v1 > v2 ? -1 : 0;
+  });
+  rows.forEach((r, i) => {
+    tbody.appendChild(r);
+    if (i < blanks.length) tbody.appendChild(blanks[i]);
+  });
 
   container.appendChild(table);
 }
