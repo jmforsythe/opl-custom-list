@@ -78,13 +78,12 @@ function get_usernames() {
 async function get_lifter_csv_from_openpl(lifter_name) {
   const url = `https://www.openpowerlifting.org/api/liftercsv/${lifter_name}/`;
   const cors_proxy_url = `https://corsproxy.io/?${url}`;
-  let result = null;
-  await fetch(cors_proxy_url).then((response) => {
-    response.text().then((data) => {
-      result = data;
-    });
-  });
-  return result;
+  const response = await fetch(cors_proxy_url)
+  if (!response.ok) {
+    console.log(`Invalid lifter name "${lifter_name}"`);
+    return null;
+  }
+  return response.text();
 }
 
 async function get_results(username) {
