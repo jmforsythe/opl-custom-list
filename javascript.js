@@ -75,22 +75,21 @@ function get_usernames() {
   return usernames;
 }
 
-function get_lifter_csv_from_openpl(lifter_name) {
+async function get_lifter_csv_from_openpl(lifter_name) {
   const url = `https://www.openpowerlifting.org/api/liftercsv/${lifter_name}/`;
   const cors_proxy_url = `https://corsproxy.io/?${url}`;
-  const xmlhttp = new XMLHttpRequest();
   let result = null;
-  xmlhttp.open("GET", cors_proxy_url, false);
-  xmlhttp.send();
-  if (xmlhttp.status == 200) {
-    result = xmlhttp.responseText;
-  }
+  await fetch(cors_proxy_url).then((response) => {
+    response.text().then((data) => {
+      result = data;
+    });
+  });
   return result;
 }
 
-function get_results(username) {
+async function get_results(username) {
   if (!(username in RESULTS_CACHE)) {
-    const csv = get_lifter_csv_from_openpl(username);
+    const csv = await get_lifter_csv_from_openpl(username);
     if (csv === null) {
       RESULTS_CACHE[username] = null;
     } else {
@@ -103,7 +102,7 @@ function get_results(username) {
   return RESULTS_CACHE[username];
 }
 
-function show_results() {
+async function show_results() {
   const container = document.getElementById("results");
   const old_list = container.querySelector("table");
   if (old_list) old_list.remove();
@@ -118,8 +117,11 @@ function show_results() {
 
   const usernames = get_usernames();
   set_url_params(usernames);
-  usernames.forEach((username) => {
-    let results = get_results(username);
+
+  await Promise.all(usernames.map((username) => get_results(username)));
+
+  usernames.forEach(async (username) => {
+    let results = await get_results(username);
     if (results === null) return;
     if (only_best)
       results = [
