@@ -38,7 +38,7 @@ DEFAULT_SORT = "Dots";
 
 RESULTS_CACHE = {};
 
-FILTERS = ["Equipment", "Federation", "ParentFederation", "Weight Class"];
+FILTERS = ["Equipment", "Federation", "ParentFederation", "WeightClassKg"];
 
 function add_username() {
   const username_list = document.querySelector(".item_list");
@@ -103,7 +103,7 @@ async function get_results(username) {
   return RESULTS_CACHE[username];
 }
 
-CURRENT_RESULTS = []
+CURRENT_RESULTS = [];
 
 async function show_results() {
   const container = document.getElementById("results");
@@ -122,12 +122,15 @@ async function show_results() {
   set_url_params(usernames);
 
   CURRENT_RESULTS = [];
+  const filter_func = get_filters_func(FILTERS);
 
   await Promise.all(
     usernames.map(async (username) => {
       let results = await get_results(username);
       if (results === null) return;
       CURRENT_RESULTS.push(...results);
+      results = results.filter(filter_func);
+      if (results.length == 0) return;
       if (only_best)
         results = [
           results.reduce((max, result) =>
@@ -268,6 +271,14 @@ function create_field_filter(field) {
   const select_el = document.createElement("select");
   select_el.id = name;
   select_el.name = name;
+
+  const default_val = document.createElement("option");
+  default_val.appendChild(document.createTextNode(`All ${map_field(field)}`));
+  default_val.setAttribute("value", "-");
+  select_el.appendChild(default_val);
+
+  select_el.addEventListener("change", (event) => show_results());
+
   return select_el;
 }
 
@@ -280,8 +291,7 @@ function add_filters(fields) {
 
 function populate_field_filter(field, results) {
   const select_el = document.getElementById(`filter_select_${field}`);
-  const default_val = document.createElement("option", { value: field, selected: "selected" });
-  default_val.appendChild(document.createTextNode(`All ${map_field(field)}`));
+  const current_val = select_el.value;
   const values = new Set(
     results
       .map((result) => result[field])
@@ -295,13 +305,31 @@ function populate_field_filter(field, results) {
       return el;
     })
     .filter((val) => val !== null);
-  select_el.replaceChildren(default_val, ...new_children);
+  select_el.replaceChildren(select_el.firstChild, ...new_children);
+  select_el.value = current_val;
 }
 
 function populate_filters(fields, results) {
   fields.forEach((field) => {
     populate_field_filter(field, results);
   });
+}
+
+function get_filter_func(field) {
+  const select_el = document.getElementById(`filter_select_${field}`);
+  const val = select_el.value;
+  return (result) => {
+    return !(field in result) || val == "-" || result[field] == val;
+  };
+}
+
+function get_filters_func(fields) {
+  const funcs = fields.map((field) => get_filter_func(field));
+  return (result) => {
+    return funcs.every((func) => {
+      return func(result);
+    });
+  };
 }
 
 function main() {
