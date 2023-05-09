@@ -23,7 +23,7 @@ FIELD_MAPPING = {
   Best3BenchKg: "Bench",
   Best3DeadliftKg: "Deadlift",
   TotalKg: "Total",
-  ParentFederation: "Parent",
+  ParentFederation: "Parent Fed",
 };
 
 SORTABLE = [
@@ -37,6 +37,8 @@ SORTABLE = [
 DEFAULT_SORT = "Dots";
 
 RESULTS_CACHE = {};
+
+FILTERS = ["Equipment", "Federation", "ParentFederation", "Weight Class"];
 
 function add_username() {
   const username_list = document.querySelector(".item_list");
@@ -101,6 +103,8 @@ async function get_results(username) {
   return RESULTS_CACHE[username];
 }
 
+CURRENT_RESULTS = []
+
 async function show_results() {
   const container = document.getElementById("results");
   const old_list = container.querySelector("table");
@@ -117,10 +121,13 @@ async function show_results() {
   const usernames = get_usernames();
   set_url_params(usernames);
 
+  CURRENT_RESULTS = [];
+
   await Promise.all(
     usernames.map(async (username) => {
       let results = await get_results(username);
       if (results === null) return;
+      CURRENT_RESULTS.push(...results);
       if (only_best)
         results = [
           results.reduce((max, result) =>
@@ -160,6 +167,8 @@ async function show_results() {
   });
 
   container.appendChild(table);
+
+  populate_filters(FILTERS, CURRENT_RESULTS);
 }
 
 function get_usernames_from_url() {
@@ -252,8 +261,52 @@ function get_select_val() {
   return select_el.value;
 }
 
+function create_field_filter(field) {
+  const name = `filter_select_${field}`;
+  const old = document.getElementById(name);
+  if (old) old.remove();
+  const select_el = document.createElement("select");
+  select_el.id = name;
+  select_el.name = name;
+  return select_el;
+}
+
+function add_filters(fields) {
+  const filter_div = document.getElementById("filters");
+  fields.forEach((field) => {
+    filter_div.appendChild(create_field_filter(field));
+  });
+}
+
+function populate_field_filter(field, results) {
+  const select_el = document.getElementById(`filter_select_${field}`);
+  const default_val = document.createElement("option", { value: field, selected: "selected" });
+  default_val.appendChild(document.createTextNode(`All ${map_field(field)}`));
+  const values = new Set(
+    results
+      .map((result) => result[field])
+      .filter((val) => val !== undefined)
+      .sort()
+  );
+  const new_children = [...values]
+    .map((val) => {
+      const el = document.createElement("option", { value: val });
+      el.appendChild(document.createTextNode(val));
+      return el;
+    })
+    .filter((val) => val !== null);
+  select_el.replaceChildren(default_val, ...new_children);
+}
+
+function populate_filters(fields, results) {
+  fields.forEach((field) => {
+    populate_field_filter(field, results);
+  });
+}
+
 function main() {
   populate_select();
+  add_filters(FILTERS);
   const URL_USERS = get_usernames_from_url();
   const USERNAME_LIST = document.querySelector(".item_list");
   URL_USERS.forEach((username) =>
