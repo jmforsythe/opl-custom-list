@@ -16,15 +16,17 @@ FIELDS = [
   "Date",
 ];
 
-FIELD_MAPPING = {
-  BodyweightKg: "Bodyweight",
-  WeightClassKg: "Weight Class",
-  Best3SquatKg: "Squat",
-  Best3BenchKg: "Bench",
-  Best3DeadliftKg: "Deadlift",
-  TotalKg: "Total",
-  ParentFederation: "Parent Fed",
-};
+FIELD_MAPPING = new Map([
+  ["BodyweightKg", "Bodyweight"],
+  ["WeightClassKg", "Weight Class"],
+  ["Best3SquatKg", "Squat"],
+  ["Best3BenchKg", "Bench"],
+  ["Best3DeadliftKg", "Deadlift"],
+  ["TotalKg", "Total"],
+  ["ParentFederation", "Parent Fed"],
+  ["AgeClass", "Age Class"],
+  ["BirthYearClass", "Age Class (IPF)"],
+]);
 
 SORTABLE = [
   "Best3SquatKg",
@@ -36,9 +38,16 @@ SORTABLE = [
 
 DEFAULT_SORT = "Dots";
 
-RESULTS_CACHE = {};
+RESULTS_CACHE = new Map();
 
-FILTERS = ["Equipment", "Federation", "ParentFederation", "WeightClassKg"];
+FILTERS = [
+  "Equipment",
+  "Federation",
+  "ParentFederation",
+  "WeightClassKg",
+  "AgeClass",
+  "BirthYearClass",
+];
 
 function add_username() {
   const username_list = document.querySelector(".item_list");
@@ -89,18 +98,19 @@ async function get_lifter_csv_from_openpl(lifter_name) {
 }
 
 async function get_results(username) {
-  if (!(username in RESULTS_CACHE)) {
+  if (!RESULTS_CACHE.has(username)) {
     const csv = await get_lifter_csv_from_openpl(username);
     if (csv === null) {
-      RESULTS_CACHE[username] = null;
+      RESULTS_CACHE.set(username, null);
     } else {
       const rows = csv.split("\n");
-      RESULTS_CACHE[username] = rows
-        .slice(1, -1)
-        .map((row) => parse_result(rows[0], row));
+      RESULTS_CACHE.set(
+        username,
+        rows.slice(1, -1).map((row) => parse_result(rows[0], row))
+      );
     }
   }
-  return RESULTS_CACHE[username];
+  return RESULTS_CACHE.get(username);
 }
 
 CURRENT_RESULTS = [];
@@ -190,7 +200,7 @@ function parse_result(header_text, result_text) {
 }
 
 function map_field(field) {
-  if (field in FIELD_MAPPING) return FIELD_MAPPING[field];
+  if (FIELD_MAPPING.has(field)) return FIELD_MAPPING.get(field);
   return field;
 }
 
@@ -295,7 +305,7 @@ function populate_field_filter(field, results) {
   const values = new Set(
     results
       .map((result) => result[field])
-      .filter((val) => val !== undefined)
+      .filter((val) => val !== undefined && val !== "")
       .sort()
   );
   const new_children = [...values]
