@@ -127,6 +127,7 @@ async function show_results() {
 
   const filter_field = get_select_val();
   const only_best = true;
+  const decouple = get_decouple_val();
 
   const usernames = get_usernames();
   set_url_params(usernames);
@@ -141,14 +142,24 @@ async function show_results() {
       CURRENT_RESULTS.push(...results);
       results = results.filter(filter_func);
       if (results.length == 0) return;
-      if (only_best)
-        results = [
+      if (only_best) {
+        if (!decouple) results = [
           results.reduce((max, result) =>
             Number(max[filter_field]) > Number(result[filter_field])
               ? max
               : result
           ),
         ];
+        else results = [
+          results.reduce((prev, cur) => {
+            let new_result = {...prev}
+            for (field of ["Best3SquatKg", "Best3BenchKg", "Best3DeadliftKg", "TotalKg", "Dots"]) {
+              new_result[field] = Number(prev[field]) > Number(cur[field]) ? prev[field] : cur[field];
+            }
+            return new_result;
+          })
+        ]
+      }
       const trs = results.map((result) =>
         result_to_table_row(result, username)
       );
@@ -274,6 +285,16 @@ function get_select_val() {
   return select_el.value;
 }
 
+function decouple_update() {
+  const decouple_el = document.getElementById("decouple");
+  decouple_el.addEventListener("change", (event) => show_results());
+}
+
+function get_decouple_val() {
+  const decouple_el = document.getElementById("decouple");
+  return decouple_el.checked;
+}
+
 function create_field_filter(field) {
   const name = `filter_select_${field}`;
   const old = document.getElementById(name);
@@ -344,6 +365,7 @@ function get_filters_func(fields) {
 
 function main() {
   populate_select();
+  decouple_update();
   add_filters(FILTERS);
   const URL_USERS = get_usernames_from_url();
   const USERNAME_LIST = document.querySelector(".item_list");
