@@ -91,7 +91,7 @@ async function get_lifter_csv_from_openpl(lifter_name) {
   const cors_proxy_url = `https://corsproxy.io/?${url}`;
   const response = await fetch(cors_proxy_url);
   if (!response.ok) {
-    console.log(`Invalid lifter name "${lifter_name}"`);
+    console.error(`Invalid lifter name "${lifter_name}"`);
     return null;
   }
   return response.text();
@@ -121,74 +121,91 @@ async function show_results() {
   if (old_list) old_list.remove();
   const table = document.createElement("table");
   const thead = fields_to_thead(FIELDS);
-  const tbody = document.createElement("tbody");
   table.appendChild(thead);
-  table.appendChild(tbody);
-
-  const filter_field = get_select_val();
-  const only_best = true;
-  const decouple = get_decouple_val();
 
   const usernames = get_usernames();
   set_url_params(usernames);
 
   CURRENT_RESULTS = [];
   const filter_func = get_filters_func(FILTERS);
-
+  all_results = [];
   await Promise.all(
     usernames.map(async (username) => {
       let results = await get_results(username);
       if (results === null) return;
-      CURRENT_RESULTS.push(...results);
-      results = results.filter(filter_func);
-      if (results.length == 0) return;
-      if (only_best) {
-        if (!decouple) results = [
-          results.reduce((max, result) =>
-            Number(max[filter_field]) > Number(result[filter_field])
-              ? max
-              : result
-          ),
-        ];
-        else results = [
-          results.reduce((prev, cur) => {
-            let new_result = {...prev}
-            for (field of ["Best3SquatKg", "Best3BenchKg", "Best3DeadliftKg", "TotalKg", "Dots"]) {
-              new_result[field] = Number(prev[field]) > Number(cur[field]) ? prev[field] : cur[field];
-            }
-            return new_result;
-          })
-        ]
-      }
-      const trs = results.map((result) =>
-        result_to_table_row(result, username)
-      );
-      const blank_row = document.createElement("tr");
-      blank_row.classList.add("blank_row");
-      const blank_row_el = document.createElement("td");
-      blank_row_el.setAttribute("colspan", FIELDS.length);
-      blank_row.appendChild(blank_row_el);
-      // trs.push(blank_row);
-      trs.forEach((tr) => {
-        tbody.appendChild(tr);
-      });
+
+      results.forEach((r) => CURRENT_RESULTS.push(r));
+
+      all_results.push({ results: results, username: username });
     })
   );
+  all_results.forEach((obj) => {
+    let results = obj.results;
+    const username = obj.username;
+    const tbody = document.createElement("tbody");
+    table.appendChild(tbody);
 
-  const sort_field = filter_field;
+    results = results.filter(filter_func);
+    if (results.length == 0) return;
+    results.sort((a, b) => new Date(a.Date) - new Date(b.Date));
+    results.sort((a, b) => Number(a.BodyweightKg) - Number(b.BodyweightKg));
 
-  const blanks = tbody.querySelectorAll(".blank_row");
+    // Get indices of results with best result in each field
+    let ptrs = new Map();
+    SORTABLE.forEach((f) => {
+      ptrs.set(
+        f,
+        results.reduce((prev, cur, ind, arr) => {
+          return Number(arr[prev][f]) < Number(cur[f]) ? ind : prev;
+        }, 0)
+      );
+    });
+    const mock_result_for_top_row = {
+      Name: results[0]["Name"],
+      Best3SquatKg: results[ptrs.get("Best3SquatKg")]["Best3SquatKg"],
+      Best3BenchKg: results[ptrs.get("Best3BenchKg")]["Best3BenchKg"],
+      Best3DeadliftKg: results[ptrs.get("Best3DeadliftKg")]["Best3DeadliftKg"],
+      TotalKg: results[ptrs.get("TotalKg")]["TotalKg"],
+      Dots: results[ptrs.get("Dots")]["Dots"],
+    };
+    const top_row = result_to_table_row(mock_result_for_top_row, username);
+    tbody.appendChild(top_row);
+
+    prelim_rows = [];
+    results.forEach((r) =>
+      prelim_rows.push(result_to_table_row((({ Name, ...o }) => o)(r)))
+    );
+    out_rows = new Set();
+    ptrs.forEach((val, key) => {
+      const column_number = FIELDS.indexOf(key);
+      top_row.children[column_number].classList.add("best_val");
+      prelim_rows[val].children[column_number].classList.add("best_val");
+      out_rows.add(val);
+    });
+
+    let collapse_rows = [];
+
+    out_rows.forEach((val) => {
+      const html_row = prelim_rows[val];
+      collapse_rows.push(html_row);
+      html_row.classList.add("collapsed");
+      tbody.appendChild(html_row);
+    });
+
+    top_row.addEventListener("click", () =>
+      collapse_rows.forEach((r) => r.classList.toggle("collapsed"))
+    );
+  });
+
+  const sort_field = get_select_val();
   const column_number = FIELDS.indexOf(sort_field);
-  let rows = Array.from(tbody.querySelectorAll("tr:not(.blank_row)"));
-  rows.sort((r1, r2) => {
-    const v1 = Number(r1.children[column_number].textContent);
-    const v2 = Number(r2.children[column_number].textContent);
-    return v1 < v2 ? 1 : v1 > v2 ? -1 : 0;
+  let tbodys = Array.from(table.children).slice(1);
+  tbodys.sort((tb1, tb2) => {
+    const v1 = Number(tb1.firstChild.children[column_number].textContent);
+    const v2 = Number(tb2.firstChild.children[column_number].textContent);
+    return v2 - v1;
   });
-  rows.forEach((r, i) => {
-    tbody.appendChild(r);
-    if (i < blanks.length) tbody.appendChild(blanks[i]);
-  });
+  tbodys.forEach((tb) => table.appendChild(tb));
 
   container.appendChild(table);
 
@@ -285,16 +302,6 @@ function get_select_val() {
   return select_el.value;
 }
 
-function decouple_update() {
-  const decouple_el = document.getElementById("decouple");
-  decouple_el.addEventListener("change", (event) => show_results());
-}
-
-function get_decouple_val() {
-  const decouple_el = document.getElementById("decouple");
-  return decouple_el.checked;
-}
-
 function create_field_filter(field) {
   const name = `filter_select_${field}`;
   const old = document.getElementById(name);
@@ -365,7 +372,6 @@ function get_filters_func(fields) {
 
 function main() {
   populate_select();
-  decouple_update();
   add_filters(FILTERS);
   const URL_USERS = get_usernames_from_url();
   const USERNAME_LIST = document.querySelector(".item_list");

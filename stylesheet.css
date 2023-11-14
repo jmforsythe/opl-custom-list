@@ -96,8 +96,12 @@ thead th {
   height: 21px;
 }
 
-tr:nth-child(even) {
+tbody:nth-child(even) {
   background-color: #333;
+}
+
+tr.collapsed {
+  display: none;
 }
 
 .blank_row {
@@ -115,18 +119,22 @@ td.name a {
   color: inherit;
 }
 
-td.squat {
+td.squat.best_val {
   color: #ffae20;
   font-weight: bold;
 }
 
-td.bench {
+td.bench.best_val {
   color: #00e0d8;
   font-weight: bold;
 }
 
-td.deadlift {
+td.deadlift.best_val {
   color: #caa5ff;
+  font-weight: bold;
+}
+
+.best_val {
   font-weight: bold;
 }
 
