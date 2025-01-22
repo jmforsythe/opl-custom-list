@@ -200,6 +200,8 @@ async function show_results() {
   const column_number = FIELDS.indexOf(sort_field);
   let tbodys = Array.from(table.children).slice(1);
   tbodys.sort((tb1, tb2) => {
+    if (!tb1.firstChild) return true;
+    if (!tb2.firstChild) return false;
     const v1 = Number(tb1.firstChild.children[column_number].textContent);
     const v2 = Number(tb2.firstChild.children[column_number].textContent);
     return v2 - v1;
