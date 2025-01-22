@@ -87,8 +87,7 @@ function get_usernames() {
 }
 
 async function get_lifter_csv_from_openpl(lifter_name) {
-  const url = `https://www.openpowerlifting.org/api/liftercsv/${lifter_name}/`;
-  const cors_proxy_url = `https://corsproxy.io/?${url}`;
+  const cors_proxy_url = `https://opl.jonathanforsythe.co.uk/api/liftercsv/${lifter_name}/`;
   const response = await fetch(cors_proxy_url);
   if (!response.ok) {
     console.error(`Invalid lifter name "${lifter_name}"`);
